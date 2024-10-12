@@ -4,9 +4,9 @@
 
 - [Positive integer](https://github.com/m-ocean-it/GoInvarCollection/blob/main/positive_int.go)
 - [Non-empty string](https://github.com/m-ocean-it/GoInvarCollection/blob/main/non_empty_string.go)
+- [Non-empty slice](https://github.com/m-ocean-it/GoInvarCollection/blob/main/non_empty_slice.go)
 
 ### TODO
-- [ ] non-empty slice
 - [ ] non-empty map
 - [ ] positive int64
 - [ ] positive int32
