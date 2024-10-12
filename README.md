@@ -1,0 +1,1 @@
+# Collection of [GoInvar](https://github.com/m-ocean-it/GoInvar) types
