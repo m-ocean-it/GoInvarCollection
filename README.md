@@ -5,6 +5,7 @@
 - [Positive integer](https://github.com/m-ocean-it/GoInvarCollection/blob/main/positive_int.go)
 - [Non-empty string](https://github.com/m-ocean-it/GoInvarCollection/blob/main/non_empty_string.go)
 - [Non-empty slice](https://github.com/m-ocean-it/GoInvarCollection/blob/main/non_empty_slice.go)
+- [Non-nil pointer](https://github.com/m-ocean-it/GoInvarCollection/blob/main/non_nil_pointer.go)
 
 ### TODO
 - [ ] non-empty map
@@ -13,7 +14,6 @@
 - [ ] positive float64
 - [ ] positive float32
 - [ ] non-nil error
-- [ ] non-nil pointer
 - [ ] string containing non-whitespace characters
 - [ ] uuid string
 - [ ] email string
