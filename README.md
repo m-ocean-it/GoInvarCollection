@@ -80,9 +80,9 @@ func New(
 ) (ValidPerson, error) {
 	p := person{Name: name, Age: age, PlacesBeen: placesBeen}
 
-	// The Inited method, used below, is a way to check whether a certain invariant was initialized.
-	// It's important to do, since they could be nil (if it was passed as nil to the constructor or you
-	// forgot to set the field when initializing the person struct). If you fail to check for that, it
+	// The Inited method, used below, is a way to check whether a certain invariant holder was initialized.
+	// It's important to do, since they could be nil (if they were passed as nil to the constructor or you
+	// forgot to set some field when initializing the person struct). If you fail to check for that, it
 	// will cause an error upon accesing the underlying value with TryUnwrap (or panic, if accessing with Unwrap).
 
 	return invar.TryNew(p, []invar.Invariant[person]{
