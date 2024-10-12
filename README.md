@@ -8,16 +8,16 @@ package main
 import (
 	"fmt"
 
-	goinvar "github.com/m-ocean-it/GoInvar"
-	goinvarcol "github.com/m-ocean-it/GoInvarCollection"
+	invar "github.com/m-ocean-it/GoInvar"
+	invarcol "github.com/m-ocean-it/GoInvarCollection"
 )
 
 func main() {
-	positiveInt, err := goinvarcol.TryNewPositiveInt(2)
+	positiveInt, err := invarcol.TryNewPositiveInt(2)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("positive int is " + fmt.Sprint(goinvar.Unwrap(positiveInt)))
+	fmt.Println("positive int is " + fmt.Sprint(invar.Unwrap(positiveInt)))
 }
 ```
