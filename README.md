@@ -135,9 +135,10 @@ func main() {
 		panic(err)
 	}
 
-	// It's okay to call Unwrap instead of TryUnwrap here, since we know that the ValidPerson invariant holds up.
-	// Otherwise, it would have errored above.
-	unwrappedPerson := invar.Unwrap(p)
+	unwrappedPerson, err := invar.TryUnwrap(p)
+	if err != nil {
+		panic(err)
+	}
 
 	// Here, it's safe to use Unwrap instead of TryUnwrap, because string and
 	// int are fully copied when constructing an InvariantsHolders, therefore
