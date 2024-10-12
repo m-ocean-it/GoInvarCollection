@@ -119,6 +119,8 @@ func main() {
 	nonEmptyName := invarcol.NewNonEmptyString("John Doe")
 	positiveAge := invarcol.NewPositiveInt(42)
 
+	// Notice the level of nesting! ValidPerson will hold a NonEmptySlice which will hold a NonEmptyString.
+	// Each element is an InvariantsHolder which satisfies the invariants across its lifetime.
 	placesBeen := invarcol.NewNonEmptySlice([]invarcol.NonEmptyString{
 		invarcol.NewNonEmptyString("London"),
 	})
