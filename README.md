@@ -64,6 +64,7 @@ type person struct {
 	Name       invarcol.NonEmptyString
 	Age        invarcol.PositiveInt
 	PlacesBeen invarcol.NonEmptySlice[invarcol.NonEmptyString]
+	Processor  invarcol.NonNilPointer[int]
 }
 
 // ValidPerson is our struct invariant. As an interface, it cannot be directly initialized.
@@ -77,30 +78,22 @@ func New(
 	name invarcol.NonEmptyString,
 	age invarcol.PositiveInt,
 	placesBeen invarcol.NonEmptySlice[invarcol.NonEmptyString],
+	processor invarcol.NonNilPointer[int],
 ) (ValidPerson, error) {
 	p := person{
 		Name:       name,
 		Age:        age,
 		PlacesBeen: placesBeen,
+		Processor:  processor,
 	}
 
-	// It's important to specify non-nilness of those fields as the struct's invariants,
-	// since, unfortunately, any interface can be nil in Go. Failing to do so will lead to
-	// an error upon TryUnwrap'ing one of those values or a panic upon calling Unwrap.
+	// The Check (or NamedCheck) method recheck the invariants of a given invariant holder.
 
 	return invar.TryNew(p, []invar.Invariant[person]{
-		{
-			Name:  "name must be initialized",
-			Check: func(p person) bool { return p.Name != nil },
-		},
-		{
-			Name:  "age must be initialized",
-			Check: func(p person) bool { return p.Age != nil },
-		},
-		{
-			Name:  "placesBeen must be initialized",
-			Check: func(p person) bool { return p.PlacesBeen != nil },
-		},
+		func(p person) error { return invar.NamedCheck("field Name", p.Name) },
+		func(p person) error { return invar.NamedCheck("field Age", p.Age) },
+		func(p person) error { return invar.NamedCheck("field PlacesBeen", p.PlacesBeen) },
+		func(p person) error { return invar.NamedCheck("field Processor", p.Processor) },
 	})
 }
 ```
@@ -128,12 +121,20 @@ func main() {
 
 	placesBeen := invarcol.NewNonEmptySlice(sliceOfPlaces)
 
-	// sliceOfPlaces[0] = nil // <--------------------------------------- TRY UNCOMMENTING
+	// sliceOfPlaces[0] = nil // <--------------------------------------- TRY UNCOMMENTING HERE
 
-	p, err := person.New(nonEmptyName, positiveAge, placesBeen)
+	someNum := 2
+	processorPtr := &someNum
+	processor := invarcol.NewNonNilPointer(processorPtr)
+
+	// nonEmptyName = nil // <------------------------------------------- TRY UNCOMMENTING HERE
+
+	p, err := person.New(nonEmptyName, positiveAge, placesBeen, processor)
 	if err != nil {
 		panic(err)
 	}
+
+	// sliceOfPlaces[0] = nil // <--------------------------------------- TRY UNCOMMENTING HERE
 
 	unwrappedPerson, err := invar.TryUnwrap(p)
 	if err != nil {
@@ -170,5 +171,8 @@ func main() {
 	}
 
 	fmt.Println("first place is " + unwrappedFirstPlace)
+
+	unwrappedPointer := invar.Unwrap(unwrappedPerson.Processor)
+	fmt.Println(*unwrappedPointer)
 }
 ```
