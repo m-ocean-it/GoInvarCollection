@@ -1,5 +1,24 @@
 # Collection of [GoInvar](https://github.com/m-ocean-it/GoInvar) types
 
+## Implemented types
+
+- [Positive integer](https://github.com/m-ocean-it/GoInvarCollection/blob/main/positive_int.go)
+- [Non-empty string](https://github.com/m-ocean-it/GoInvarCollection/blob/main/non_empty_string.go)
+
+### TODO
+- [ ] non-empty slice
+- [ ] non-empty map
+- [ ] positive int64
+- [ ] positive int32
+- [ ] positive float64
+- [ ] positive float32
+- [ ] non-nil error
+- [ ] non-nil pointer
+- [ ] string containing non-whitespace characters
+- [ ] uuid string
+- [ ] email string
+- [ ] url string
+
 ## Example usage
 
 ### Primitive value invariant
