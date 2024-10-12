@@ -119,11 +119,14 @@ func main() {
 	nonEmptyName := invarcol.NewNonEmptyString("John Doe")
 	positiveAge := invarcol.NewPositiveInt(42)
 
-	// Notice the level of nesting! ValidPerson will hold a NonEmptySlice which will hold a NonEmptyString.
-	// Each element is an InvariantsHolder which satisfies the invariants across its lifetime.
-	placesBeen := invarcol.NewNonEmptySlice([]invarcol.NonEmptyString{
+	sliceOfPlacesPtr := &[]invarcol.NonEmptyString{
 		invarcol.NewNonEmptyString("London"),
-	})
+	}
+
+	// The line below modifies the slice with places to contain no elements:
+	// *sliceOfPlacesPtr = []invarcol.NonEmptyString{} // <---------------- TRY UNCOMMENTING
+
+	placesBeen := invarcol.NewNonEmptySlice(*sliceOfPlacesPtr)
 
 	p, err := person.New(nonEmptyName, positiveAge, placesBeen)
 	if err != nil {
@@ -134,12 +137,21 @@ func main() {
 	// Otherwise, it would have errored above.
 	unwrappedPerson := invar.Unwrap(p)
 
-	// It's okay to call Unwrap instead of TryUnwrap on the structs' fields, since we know that the struct's
-	// invariant holds up here. (Since we just unwrapped the struct and didn't modify it in any way.
-	// But, to be on the safe side, you can always use TryUnwrap and handle potential errors.)
+	// Here, it's safe to use Unwrap instead of TryUnwrap, because string and
+	// int are fully copied when constructing an InvariantsHolders, therefore
+	// there are no external pointers to those values.
+	//
+	// (But you can still stay on the safe side and use TryUnwrap, if you feel like it.)
 	unwrappedName := invar.Unwrap(unwrappedPerson.Name)
 	unwrappedAge := invar.Unwrap(unwrappedPerson.Age)
-	unwrappedPlacesBeen := invar.Unwrap(unwrappedPerson.PlacesBeen)
+
+	// Here, it's better to call TryUnwrap, since slice could have been modified
+	// by someone with a pointer to it. If the invariants are no longer upheld,
+	// we'll get an error.
+	unwrappedPlacesBeen, err := invar.TryUnwrap(unwrappedPerson.PlacesBeen)
+	if err != nil {
+		panic(err)
+	}
 
 	// We know that unwrappedName is non-empty, since its type is NonEmptyString.
 	fmt.Println("non-empty name is " + unwrappedName)
@@ -148,7 +160,7 @@ func main() {
 	fmt.Println("positive age is " + fmt.Sprint(unwrappedAge))
 
 	// Accessing the first place is safe since we know that unwrappedPlacesBeen is non-empty,
-	// because its type is NonEmptySlice. We, also, need to unwrap the NonEmptyString we're getting.
+	// because its type is NonEmptySlice. We, also, need to unwrap NonEmptyString from that slice.
 	fmt.Println("first place is " + invar.Unwrap(unwrappedPlacesBeen[0]))
 }
 ```
