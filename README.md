@@ -66,7 +66,7 @@ type person struct {
 	PlacesBeen invarcol.NonEmptySlice[invarcol.NonEmptyString]
 }
 
-// ValidPerson is our struct invariant. As an interface, it cannot be directly initialized.
+// ValidPerson is our invariants holder. As an interface, it cannot be directly initialized.
 // Also, since the person struct is private, no other package would be able implement that interface.
 // The underlying person struct will be accessible via the Invariant.Get method.
 type ValidPerson invar.InvariantsHolder[person]
