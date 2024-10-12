@@ -119,9 +119,13 @@ func main() {
 	nonEmptyName := invarcol.NewNonEmptyString("John Doe")
 	positiveAge := invarcol.NewPositiveInt(42)
 
-	placesBeen := invarcol.NewNonEmptySlice([]invarcol.NonEmptyString{
+	sliceOfPlaces := []invarcol.NonEmptyString{
 		invarcol.NewNonEmptyString("London"),
-	})
+	}
+
+	placesBeen := invarcol.NewNonEmptySlice(sliceOfPlaces)
+
+	// sliceOfPlaces[0] = nil // <--------------------------------------- TRY UNCOMMENTING
 
 	p, err := person.New(nonEmptyName, positiveAge, placesBeen)
 	if err != nil {
@@ -154,9 +158,14 @@ func main() {
 	// We know that unwrappedAge is a positive integer, since its type is PositiveInt.
 	fmt.Println("positive age is " + fmt.Sprint(unwrappedAge))
 
-	// Accessing the first place is safe since we know that unwrappedPlacesBeen is non-empty,
-	// because its type is NonEmptySlice. We, also, need to unwrap NonEmptyString from that slice.
-	fmt.Println("first place is " + invar.Unwrap(unwrappedPlacesBeen[0]))
+	firstPlace := unwrappedPlacesBeen[0]
+
+	unwrappedFirstPlace, err := invar.TryUnwrap(firstPlace)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("first place is " + unwrappedFirstPlace)
 }
 ```
 
