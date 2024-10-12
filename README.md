@@ -119,14 +119,9 @@ func main() {
 	nonEmptyName := invarcol.NewNonEmptyString("John Doe")
 	positiveAge := invarcol.NewPositiveInt(42)
 
-	sliceOfPlacesPtr := &[]invarcol.NonEmptyString{
+	placesBeen := invarcol.NewNonEmptySlice([]invarcol.NonEmptyString{
 		invarcol.NewNonEmptyString("London"),
-	}
-
-	// The line below modifies the slice with places to contain no elements:
-	// *sliceOfPlacesPtr = []invarcol.NonEmptyString{} // <---------------- TRY UNCOMMENTING
-
-	placesBeen := invarcol.NewNonEmptySlice(*sliceOfPlacesPtr)
+	})
 
 	p, err := person.New(nonEmptyName, positiveAge, placesBeen)
 	if err != nil {
@@ -172,49 +167,53 @@ func main() {
 package person
 
 import (
-    invar "github.com/m-ocean-it/GoInvar"
-    invarcol "github.com/m-ocean-it/GoInvarCollection"
+	invar "github.com/m-ocean-it/GoInvar"
+	invarcol "github.com/m-ocean-it/GoInvarCollection"
 )
 
+// The struct itself must be private so that it could only be created via the constructor.
 type person struct {
-    name invarcol.NonEmptyString
-    age  invarcol.PositiveInt
+	Name       invarcol.NonEmptyString
+	Age        invarcol.PositiveInt
+	PlacesBeen invarcol.NonEmptySlice[invarcol.NonEmptyString]
 }
 
-type ValidPerson interface {
-    GetName() string
-    GetAge() int
-	
-    self() *person // to disallow other implementors
-}
+// ValidPerson is our struct invariant. As an interface, it cannot be directly initialized.
+// Also, since the person struct is private, no other package would be able implement that interface.
+// The underlying person struct will be accessible via the Invariant.Get method.
+type ValidPerson invar.InvariantsHolder[person]
 
-func New(name string, age int) (ValidPerson, error) {
-    nonEmptyName, err := invarcol.TryNewNonEmptyString(name)
-    if err != nil {
-        return nil, errors.New("")
-    }
+// New is a custom constructor that checks individual field invariants and returns ValidPerson.
+// It's also possible to check inter-field invariants within a constructor.
+func New(
+	name invarcol.NonEmptyString,
+	age invarcol.PositiveInt,
+	placesBeen invarcol.NonEmptySlice[invarcol.NonEmptyString],
+) (ValidPerson, error) {
+	p := person{
+		Name:       name,
+		Age:        age,
+		PlacesBeen: placesBeen,
+	}
 
-    positiveAge, err := invarcol.TryNewPositiveInt(age)
-    if err != nil {
-	    return nil, errors.New("")
-    }
+	// It's important to specify non-nilness of those fields as the struct's invariants,
+	// since, unfortunately, any interface can be nil in Go. Failing to do so will lead to
+	// an error upon TryUnwrap'ing one of those values or a panic upon calling Unwrap.
 
-    return &person{
-        name: nonEmptyName,
-        age:  positiveAge,
-    }, nil
-}
-
-func (p *person) GetName() string {
-    return invar.Unwrap(p.name)
-}
-
-func (p *person) GetAge() int {
-    return invar.Unwrap(p.age)
-}
-
-func (p *person) self() *person {
-    return p
+	return invar.TryNew(p, []invar.Invariant[person]{
+		{
+			Name:  "name must be initialized",
+			Check: func(p person) bool { return p.Name != nil },
+		},
+		{
+			Name:  "age must be initialized",
+			Check: func(p person) bool { return p.Age != nil },
+		},
+		{
+			Name:  "placesBeen must be initialized",
+			Check: func(p person) bool { return p.PlacesBeen != nil },
+		},
+	})
 }
 ```
 `main.go`:
