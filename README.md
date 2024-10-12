@@ -148,7 +148,7 @@ func main() {
 	fmt.Println("positive age is " + fmt.Sprint(unwrappedAge))
 
 	// Accessing the first place is safe since we know that unwrappedPlacesBeen is non-empty,
-	// because its type is NonEmptySlice. We, also, need to unwrap NonEmptyString from that slice.
+	// because its type is NonEmptySlice. We, also, need to unwrap the NonEmptyString we're getting.
 	fmt.Println("first place is " + invar.Unwrap(unwrappedPlacesBeen[0]))
 }
 ```
