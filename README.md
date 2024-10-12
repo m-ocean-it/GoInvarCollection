@@ -27,7 +27,7 @@ func main() {
 
 ### Encoding struct invariants
 
-#### Approach 1: wrap and unwrap whole struct
+#### Approach 1: wrap whole struct, then unwrap it, then unwrap separate fields
 
 `person/person.go`:
 ```go
@@ -83,7 +83,7 @@ fmt.Printf("name is %s\n", invar.Unwrap(validPerson.Name))
 fmt.Printf("age is %d\n", invar.Unwrap(validPerson.Age))
 ```
 
-#### Approach 2: unwrap separate fields
+#### Approach 2: create accessor-methods and unwrap fields within them
 
 `person/person.go`:
 ```go
