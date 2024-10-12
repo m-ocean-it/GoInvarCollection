@@ -1,11 +1,18 @@
 package invarcol
 
-import invar "github.com/m-ocean-it/GoInvar"
+import (
+	"errors"
+
+	invar "github.com/m-ocean-it/GoInvar"
+)
 
 var positiveIntInvariants = []invar.Invariant[int]{
-	{
-		Name:  "number must be positive",
-		Check: func(x int) bool { return x > 0 },
+	func(x int) error {
+		if x > 0 {
+			return nil
+		}
+
+		return errors.New("number must be positive")
 	},
 }
 

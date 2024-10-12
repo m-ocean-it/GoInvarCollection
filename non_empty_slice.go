@@ -1,6 +1,10 @@
 package invarcol
 
-import invar "github.com/m-ocean-it/GoInvar"
+import (
+	"errors"
+
+	invar "github.com/m-ocean-it/GoInvar"
+)
 
 type NonEmptySlice[T any] invar.InvariantsHolder[[]T]
 
@@ -14,9 +18,12 @@ func TryNewNonEmptySlice[T any](s []T) (NonEmptySlice[T], error) {
 
 func getNonEmptySliceInvariants[T any]() []invar.Invariant[[]T] {
 	return []invar.Invariant[[]T]{
-		{
-			Name:  "slice must be non-empty",
-			Check: func(s []T) bool { return len(s) > 0 },
+		func(s []T) error {
+			if len(s) > 0 {
+				return nil
+			}
+
+			return errors.New("slice must be non-empty")
 		},
 	}
 }

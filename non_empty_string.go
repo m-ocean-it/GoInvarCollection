@@ -1,11 +1,18 @@
 package invarcol
 
-import invar "github.com/m-ocean-it/GoInvar"
+import (
+	"errors"
+
+	invar "github.com/m-ocean-it/GoInvar"
+)
 
 var nonEmptyStringInvariants = []invar.Invariant[string]{
-	{
-		Name:  "string must be non-empty",
-		Check: func(x string) bool { return len(x) > 0 },
+	func(x string) error {
+		if len(x) > 0 {
+			return nil
+		}
+
+		return errors.New("string must be non-empty")
 	},
 }
 
