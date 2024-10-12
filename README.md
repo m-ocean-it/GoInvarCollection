@@ -20,67 +20,93 @@ func main() {
         panic(err)
     }
 
-    fmt.Println("positive int is " + fmt.Sprint(invar.Unwrap(positiveInt)))
-    // or use TryUnwrap
+    // Here, it's safe to call Unwrap, instead of TryUnwrap, since initialization didn't error above.
+    n := invar.Unwrap(positiveInt)
+
+    fmt.Println("positive int is " + fmt.Sprint(n))
 }
 ```
 
 ### Encoding struct invariants
 
-#### Approach 1: wrap whole struct, then unwrap it, then unwrap separate fields
+#### Approach 1: use `Invariant[T]`, where `T` is the struct
 
 `person/person.go`:
 ```go
 package person
 
 import (
-    invar "github.com/m-ocean-it/GoInvar"
-    invarcol "github.com/m-ocean-it/GoInvarCollection"
+	invar "github.com/m-ocean-it/GoInvar"
+	invarcol "github.com/m-ocean-it/GoInvarCollection"
 )
 
+// The struct itself must be private so that it could only be created via the constructor.
 type person struct {
-    Name invarcol.NonEmptyString
-    Age  invarcol.PositiveInt
+	Name invarcol.NonEmptyString
+	Age  invarcol.PositiveInt
 }
 
+// ValidPerson is our struct invariant. As an interface, it cannot be directly initialized.
+// Also, since the person struct is private, no other package would be able implement that interface.
+// The underlying person struct will be accessible via the Invariant.Get method.
 type ValidPerson invar.Invariant[person]
 
-func New(name string, age int) (ValidPerson, error) {
-    nonEmptyName, err := invarcol.TryNewNonEmptyString(name)
-    if err != nil {
-        return nil, errors.New("name is invalid")
-    }
-    positiveAge, err := invarcol.TryNewPositiveInt(age)
-    if err != nil {
-        return nil, errors.New("age is invalid")
-    }
+// New is a custom constructor that checks individual field invariants and returns ValidPerson.
+// It's also possible to check inter-field invariants within a constructor.
+func New(name invarcol.NonEmptyString, age invarcol.PositiveInt) (ValidPerson, error) {
+	p := person{Name: name, Age: age}
 
-    p := person{Name: nonEmptyName, Age: positiveAge}
+	// The Inited method, used below, is a way to check whether a certain invariant was initialized.
+	// It's important to do, since they could be nil, which will cause an error upon accesing the
+	// underlying value with TryUnwrap (or panic, if accessing with Unwrap).
 
-    return invar.TryNew(p, []invar.Condition[person]{
-        func(p person) bool { return invar.Inited(p.Name) },
-        func(p person) bool { return invar.Inited(p.Age) },
-    })
+	return invar.TryNew(p, []invar.Condition[person]{
+		func(p person) bool { return invar.Inited(p.Name) },
+		func(p person) bool { return invar.Inited(p.Age) },
+	})
 }
+
 ```
 
 `main.go`:
 ```go
+package main
+
 import (
-    "app/person"
-    "fmt"
-    invar "github.com/m-ocean-it/GoInvar"
+	"app/person"
+	"fmt"
+
+	invar "github.com/m-ocean-it/GoInvar"
+	invarcol "github.com/m-ocean-it/GoInvarCollection"
 )
 
-wrappedPerson, err := person.New("Simon", 29)
-if err != nil {
-    panic(err)
+func main() {
+	// It's okay to call New... instead of TryNew... when you are sure the invariants hold up. It won't panic.
+	nonEmptyName := invarcol.NewNonEmptyString("John Doe")
+	positiveAge := invarcol.NewPositiveInt(42)
+
+	p, err := person.New(nonEmptyName, positiveAge)
+	if err != nil {
+		panic(err)
+	}
+
+	// It's okay to call Unwrap instead of TryUnwrap here, since we know that the ValidPerson invariant holds up.
+	// Otherwise, it would have errored above.
+	unwrappedPerson := invar.Unwrap(p)
+
+	// It's okay to call Unwrap instead of TryUnwrap on the structs' fields, since we know that the struct's
+	// invariant holds up here and individual field invariants were checked upon instantiation.
+	// (Since we just unwrapped the struct and didn't modify it in any way, all it's invariants must hold up.
+	// But, to be on the safe side, you can always use TryUnwrap and handle potential errors.)
+	unwrappedName := invar.Unwrap(unwrappedPerson.Name)
+	unwrappedAge := invar.Unwrap(unwrappedPerson.Age)
+
+	// We know that unwrappedName is non-empty, since it's type is NonEmptyString.
+	fmt.Println("non-empty name is " + unwrappedName)
+
+	// We know that unwrappedAge is a positive integer, since it's type is PositiveInt.
+	fmt.Println("positive age is " + fmt.Sprint(unwrappedAge))
 }
-
-validPerson := invar.Unwrap(wrappedPerson) // or use TryUnwrap
-
-fmt.Printf("name is %s\n", invar.Unwrap(validPerson.Name))
-fmt.Printf("age is %d\n", invar.Unwrap(validPerson.Age))
 ```
 
 #### Approach 2: create accessor-methods and unwrap fields within them
