@@ -61,8 +61,9 @@ import (
 
 // The struct itself must be private so that it could only be created via the constructor.
 type person struct {
-	Name invarcol.NonEmptyString
-	Age  invarcol.PositiveInt
+	Name       invarcol.NonEmptyString
+	Age        invarcol.PositiveInt
+	PlacesBeen invarcol.NonEmptySlice[invarcol.NonEmptyString]
 }
 
 // ValidPerson is our struct invariant. As an interface, it cannot be directly initialized.
@@ -72,22 +73,30 @@ type ValidPerson invar.InvariantsHolder[person]
 
 // New is a custom constructor that checks individual field invariants and returns ValidPerson.
 // It's also possible to check inter-field invariants within a constructor.
-func New(name invarcol.NonEmptyString, age invarcol.PositiveInt) (ValidPerson, error) {
-	p := person{Name: name, Age: age}
+func New(
+	name invarcol.NonEmptyString,
+	age invarcol.PositiveInt,
+	placesBeen invarcol.NonEmptySlice[invarcol.NonEmptyString],
+) (ValidPerson, error) {
+	p := person{Name: name, Age: age, PlacesBeen: placesBeen}
 
 	// The Inited method, used below, is a way to check whether a certain invariant was initialized.
-	// It's important to do, they could be nil, which will cause an error upon accesing the underlying
-	// value with TryUnwrap (or panic, if accessing with Unwrap).
+	// It's important to do, since they could be nil (if it was passed as nil to the constructor or you
+	// forgot to set the field when initializing the person struct). If you fail to check for that, it
+	// will cause an error upon accesing the underlying value with TryUnwrap (or panic, if accessing with Unwrap).
 
 	return invar.TryNew(p, []invar.Invariant[person]{
 		{
 			Name:  "name must be initialized",
 			Check: func(p person) bool { return invar.Inited(p.Name) },
 		},
-
 		{
 			Name:  "age must be initialized",
 			Check: func(p person) bool { return invar.Inited(p.Age) },
+		},
+		{
+			Name:  "placesBeen must be initialized",
+			Check: func(p person) bool { return invar.Inited(p.PlacesBeen) },
 		},
 	})
 }
@@ -110,7 +119,11 @@ func main() {
 	nonEmptyName := invarcol.NewNonEmptyString("John Doe")
 	positiveAge := invarcol.NewPositiveInt(42)
 
-	p, err := person.New(nonEmptyName, positiveAge)
+	placesBeen := invarcol.NewNonEmptySlice([]invarcol.NonEmptyString{
+		invarcol.NewNonEmptyString("London"),
+	})
+
+	p, err := person.New(nonEmptyName, positiveAge, placesBeen)
 	if err != nil {
 		panic(err)
 	}
@@ -120,17 +133,21 @@ func main() {
 	unwrappedPerson := invar.Unwrap(p)
 
 	// It's okay to call Unwrap instead of TryUnwrap on the structs' fields, since we know that the struct's
-	// invariant holds up here and individual field invariants were checked upon instantiation.
-	// (Since we just unwrapped the struct and didn't modify it in any way, all it's invariants must hold up.
+	// invariant holds up here. (Since we just unwrapped the struct and didn't modify it in any way.
 	// But, to be on the safe side, you can always use TryUnwrap and handle potential errors.)
 	unwrappedName := invar.Unwrap(unwrappedPerson.Name)
 	unwrappedAge := invar.Unwrap(unwrappedPerson.Age)
+	unwrappedPlacesBeen := invar.Unwrap(unwrappedPerson.PlacesBeen)
 
-	// We know that unwrappedName is non-empty, since it's type is NonEmptyString.
+	// We know that unwrappedName is non-empty, since its type is NonEmptyString.
 	fmt.Println("non-empty name is " + unwrappedName)
 
-	// We know that unwrappedAge is a positive integer, since it's type is PositiveInt.
+	// We know that unwrappedAge is a positive integer, since its type is PositiveInt.
 	fmt.Println("positive age is " + fmt.Sprint(unwrappedAge))
+
+	// Accessing the first place is safe since we know that unwrappedPlacesBeen is non-empty,
+	// because its type is NonEmptySlice. We, also, need to unwrap NonEmptyString from that slice.
+	fmt.Println("first place is " + invar.Unwrap(unwrappedPlacesBeen[0]))
 }
 ```
 
