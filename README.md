@@ -68,7 +68,7 @@ type person struct {
 // ValidPerson is our struct invariant. As an interface, it cannot be directly initialized.
 // Also, since the person struct is private, no other package would be able implement that interface.
 // The underlying person struct will be accessible via the Invariant.Get method.
-type ValidPerson invar.Invariant[person]
+type ValidPerson invar.InvariantsHolder[person]
 
 // New is a custom constructor that checks individual field invariants and returns ValidPerson.
 // It's also possible to check inter-field invariants within a constructor.
@@ -76,15 +76,21 @@ func New(name invarcol.NonEmptyString, age invarcol.PositiveInt) (ValidPerson, e
 	p := person{Name: name, Age: age}
 
 	// The Inited method, used below, is a way to check whether a certain invariant was initialized.
-	// It's important to do, since they could be nil, which will cause an error upon accesing the
-	// underlying value with TryUnwrap (or panic, if accessing with Unwrap).
+	// It's important to do, they could be nil, which will cause an error upon accesing the underlying
+	// value with TryUnwrap (or panic, if accessing with Unwrap).
 
-	return invar.TryNew(p, []invar.Condition[person]{
-		func(p person) bool { return invar.Inited(p.Name) },
-		func(p person) bool { return invar.Inited(p.Age) },
+	return invar.TryNew(p, []invar.Invariant[person]{
+		{
+			Name:  "name must be initialized",
+			Check: func(p person) bool { return invar.Inited(p.Name) },
+		},
+
+		{
+			Name:  "age must be initialized",
+			Check: func(p person) bool { return invar.Inited(p.Age) },
+		},
 	})
 }
-
 ```
 
 `main.go`:
