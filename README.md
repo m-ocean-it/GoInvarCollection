@@ -48,7 +48,7 @@ func main() {
 
 ### Encoding struct invariants
 
-#### Approach 1: use `Invariant[T]`, where `T` is the struct
+#### Use `Invariant[T]`, where `T` is the struct
 
 `person/person.go`:
 ```go
@@ -66,7 +66,7 @@ type person struct {
 	PlacesBeen invarcol.NonEmptySlice[invarcol.NonEmptyString]
 }
 
-// ValidPerson is our invariants holder. As an interface, it cannot be directly initialized.
+// ValidPerson is our struct invariant. As an interface, it cannot be directly initialized.
 // Also, since the person struct is private, no other package would be able implement that interface.
 // The underlying person struct will be accessible via the Invariant.Get method.
 type ValidPerson invar.InvariantsHolder[person]
@@ -78,25 +78,28 @@ func New(
 	age invarcol.PositiveInt,
 	placesBeen invarcol.NonEmptySlice[invarcol.NonEmptyString],
 ) (ValidPerson, error) {
-	p := person{Name: name, Age: age, PlacesBeen: placesBeen}
+	p := person{
+		Name:       name,
+		Age:        age,
+		PlacesBeen: placesBeen,
+	}
 
-	// The Inited method, used below, is a way to check whether a certain invariant holder was initialized.
-	// It's important to do, since they could be nil (if they were passed as nil to the constructor or you
-	// forgot to set some field when initializing the person struct). If you fail to check for that, it
-	// will cause an error upon accesing the underlying value with TryUnwrap (or panic, if accessing with Unwrap).
+	// It's important to specify non-nilness of those fields as the struct's invariants,
+	// since, unfortunately, any interface can be nil in Go. Failing to do so will lead to
+	// an error upon TryUnwrap'ing one of those values or a panic upon calling Unwrap.
 
 	return invar.TryNew(p, []invar.Invariant[person]{
 		{
 			Name:  "name must be initialized",
-			Check: func(p person) bool { return invar.Inited(p.Name) },
+			Check: func(p person) bool { return p.Name != nil },
 		},
 		{
 			Name:  "age must be initialized",
-			Check: func(p person) bool { return invar.Inited(p.Age) },
+			Check: func(p person) bool { return p.Age != nil },
 		},
 		{
 			Name:  "placesBeen must be initialized",
-			Check: func(p person) bool { return invar.Inited(p.PlacesBeen) },
+			Check: func(p person) bool { return p.PlacesBeen != nil },
 		},
 	})
 }
@@ -166,80 +169,5 @@ func main() {
 	}
 
 	fmt.Println("first place is " + unwrappedFirstPlace)
-}
-```
-
-#### Approach 2: create accessor-methods and unwrap fields within them
-
-`person/person.go`:
-```go
-package person
-
-import (
-	invar "github.com/m-ocean-it/GoInvar"
-	invarcol "github.com/m-ocean-it/GoInvarCollection"
-)
-
-// The struct itself must be private so that it could only be created via the constructor.
-type person struct {
-	Name       invarcol.NonEmptyString
-	Age        invarcol.PositiveInt
-	PlacesBeen invarcol.NonEmptySlice[invarcol.NonEmptyString]
-}
-
-// ValidPerson is our struct invariant. As an interface, it cannot be directly initialized.
-// Also, since the person struct is private, no other package would be able implement that interface.
-// The underlying person struct will be accessible via the Invariant.Get method.
-type ValidPerson invar.InvariantsHolder[person]
-
-// New is a custom constructor that checks individual field invariants and returns ValidPerson.
-// It's also possible to check inter-field invariants within a constructor.
-func New(
-	name invarcol.NonEmptyString,
-	age invarcol.PositiveInt,
-	placesBeen invarcol.NonEmptySlice[invarcol.NonEmptyString],
-) (ValidPerson, error) {
-	p := person{
-		Name:       name,
-		Age:        age,
-		PlacesBeen: placesBeen,
-	}
-
-	// It's important to specify non-nilness of those fields as the struct's invariants,
-	// since, unfortunately, any interface can be nil in Go. Failing to do so will lead to
-	// an error upon TryUnwrap'ing one of those values or a panic upon calling Unwrap.
-
-	return invar.TryNew(p, []invar.Invariant[person]{
-		{
-			Name:  "name must be initialized",
-			Check: func(p person) bool { return p.Name != nil },
-		},
-		{
-			Name:  "age must be initialized",
-			Check: func(p person) bool { return p.Age != nil },
-		},
-		{
-			Name:  "placesBeen must be initialized",
-			Check: func(p person) bool { return p.PlacesBeen != nil },
-		},
-	})
-}
-```
-`main.go`:
-```go
-import (
-    "app/person"
-    "fmt"
-    invar "github.com/m-ocean-it/GoInvar"
-)
-
-func main() {
-	p, err := person.New("Simon", 29)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("name is %s\n", p.GetName())
-	fmt.Printf("age is %d\n", p.GetAge())
 }
 ```
